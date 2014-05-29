@@ -1,0 +1,40 @@
+--Всеки сензор има свой уникален адрес който се записва в МАС.
+--Node e адреса в RS-485. Когато е на USB трябва да е 0
+--За всеки канал на измерване се задава име и Active=TRUE ако трябва да бъде записван
+
+CREATE TABLE tableChannels
+(
+   ID   INTEGER PRIMARY KEY AUTOINCREMENT,
+   Channel VARCHAR(30) UNIQUE,
+   Node INT,
+   MAC VARCHAR(8) ,
+   Active BOOLEAN
+);
+
+INSERT INTO tableChannels VALUES (NULL,'Шоково',-1,"",1);
+INSERT INTO tableChannels VALUES (NULL,'Цех 1',-1,"",0);
+INSERT INTO tableChannels VALUES (NULL,'Цех 2',3,"86A98502",1);
+
+SELECT * FROM tableChannels;
+
+
+CREATE TABLE tableLog
+(
+    Timestamp   DATETIME,
+    ChannelID   INT,
+    Temp        INT
+);
+
+CREATE TABLE tableSettings
+(
+    nextScanHours     INT,
+    nextScanMinutes   INT,
+    startH            INT,
+    startM            INT,
+    openOnFail        INT,
+    maxFailRetry      INT,
+    maxNodeNum        INT,
+    commType          INT,
+    serialPort        VARCHAR(6)
+);
+INSERT INTO tableSettings VALUES (0,15, 10,0, 1, 5,4,1,'');

@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/ico">
+        <file>res/snow64.ico</file>
+        <file>res/thermo.ico</file>
+    </qresource>
+</RCC>
