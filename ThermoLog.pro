@@ -48,7 +48,7 @@ RC_FILE = thermologIcon.rc
 #Linux
 #INCLUDEPATH += /home/svilen/work/QtPC/qwt-6.0.1/src
 #Windows
-INCLUDEPATH += C:\\Qt\\Qwt-6.1.0\\include
+INCLUDEPATH += C:\\work\\Qt\\Qwt-6.1.2\\src
 
 
 # Библиотеката libqwt.so.6.0.1 трябва да се копира при изпълнимия файл и да се направят връзки с кратките имена към нея
@@ -58,9 +58,9 @@ INCLUDEPATH += C:\\Qt\\Qwt-6.1.0\\include
 #LIBS += /home/svilen/work/QtPC/qwt-6.0.1/lib/libqwt.so
 
 #Debug
-#LIBS += C:\\Qt\\Qwt-6.1.0\\lib\\qwtd.dll
+LIBS += C:\\work\\Qt\\Qwt-6.1.2\\lib\\qwtd.dll
 #Release
-LIBS += C:\\Qt\\Qwt-6.1.0\\lib\\qwt.dll
+#LIBS += C:\\work\\Qt\\Qwt-6.1.2\\lib\\qwt.dll
 
 #Маркера в диаграмата има 4 знака след запетаята. За да се промени броя им трябва във файла
 # qwt_plot_picker.cpp да се промени функцията QwtText QwtPlotPicker::trackerTextF( const QPointF &pos ) const
@@ -79,7 +79,7 @@ LIBS += C:\\Qt\\Qwt-6.1.0\\lib\\qwt.dll
 #---------------------------------------------------------------------------------
 #   Za Qt Embedded Widgets
 #---------------------------------------------------------------------------------
-include(c:\\work\\Qt5\\embedded-widgets-1.1.0\\src\\common\\common.pri)
+include(c:\\work\\Qt\\embedded-widgets-1.1.0\\src\\common\\common.pri)
   #include(e:\\work\\QWT\\embedded-widgets-1.1.0\\src\\svgslideswitch\\svgslideswitch.pri)
 
   #include(e:\\work\\QWT\\embedded-widgets-1.1.0\\src\\svgbutton\\svgbutton.pri)
@@ -90,10 +90,10 @@ include(c:\\work\\Qt5\\embedded-widgets-1.1.0\\src\\common\\common.pri)
   #include(e:\\work\\QWT\\embedded-widgets-1.1.0\\src\\multislider\\multislider.pri)
   #include(e:\\work\\QWT\\embedded-widgets-1.1.0\\src\\scrolldial\\scrolldial.pri)
   # omit scrollwheel, it's already included in scrolldial.pri
-include(c:\\work\\Qt5\\embedded-widgets-1.1.0\\src\\svgdialgauge\\svgdialgauge.pri)
+include(c:\\work\\Qt\\embedded-widgets-1.1.0\\src\\svgdialgauge\\svgdialgauge.pri)
 
 RESOURCES += \
-    c:\\work\\Qt5\\embedded-widgets-1.1.0\\skins\\thermometer_svgdialgauge.qrc \
+    c:\\work\\Qt\\embedded-widgets-1.1.0\\skins\\thermometer_svgdialgauge.qrc \
   #    e:\\work\\QWT\\embedded-widgets-1.1.0\\skins\\tachometer_svgdialgauge.qrc \
   #     e:\\work\\QWT\\embedded-widgets-1.1.0\\skins\\amperemeter_svgdialgauge.qrc \
   #   e:\\work\\QWT\\embedded-widgets-1.1.0\\skins\\beryl_5waybutton.qrc \
@@ -108,3 +108,6 @@ RESOURCES += \
   #   e:\\work\\QWT\\embedded-widgets-1.1.0\\skins\\metallicbrush_svgbutton.qrc \
   #   e:\\work\\QWT\\embedded-widgets-1.1.0\\skins\\metallicbrush_svgslideswitch.qrc
     resources.qrc
+
+DISTFILES += \
+    sql.txt

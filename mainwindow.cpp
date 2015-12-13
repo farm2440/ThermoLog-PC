@@ -88,6 +88,7 @@ MainWindow::MainWindow(QWidget *parent) :    QMainWindow(parent),    ui(new Ui::
         database.setDatabaseName("thermolog.db");
         if(!database.open()) QMessageBox::critical(this, tr("Грешка база данни"), tr("Не мога да отворя БД"));
     }
+
     //Зареждане на текущите настройки от БД:
     QSqlQuery qry;
     bool ok;
