@@ -13,6 +13,7 @@
 #include <QRegExpValidator>
 #include <QListWidgetItem>
 #include <QSerialPort>
+#include <QDebug>
 
 #include "definitions.h"
 #include "channel.h"

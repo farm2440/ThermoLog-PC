@@ -2,6 +2,9 @@
 #define DEFINITIONS_H
 
 #define MAX_DATA_DISPLAYED 400
-#define STRING_SOFT_VERSION "Thermolog 1.3"
+#define STRING_SOFT_VERSION "Thermolog 2.0.1"
+
+#define MAC_LENGTH 16  //Брой символи на МАС
+#define MAX_NODE_ADDRESS 15 //Най голямеия адрес на контролер в RS-485
 
 #endif // DEFINITIONS_H

@@ -14,14 +14,18 @@ DialogChannelSettings::DialogChannelSettings(QWidget *parent, QString portName ,
 
     _maxNodeNum = maxNodeNum;
     //Таблица с каналите
-    ui->tableChannels->setColumnCount(3);
+    ui->tableChannels->setColumnCount(5);
     QStringList headers;
     headers.append(tr("Име на канал"));
     headers.append(tr("Контролер"));
     headers.append(tr("Адрес"));
-    ui->tableChannels->setColumnWidth(0,ui->tableChannels->width()-195);//Име на канал
-    ui->tableChannels->setColumnWidth(1,80);
-    ui->tableChannels->setColumnWidth(2,80);//Адрес
+    headers.append(tr("Офсет"));
+    headers.append(tr("Множител"));
+    ui->tableChannels->setColumnWidth(0,140);//Име на канал
+    ui->tableChannels->setColumnWidth(1,80); //контролер
+    ui->tableChannels->setColumnWidth(2,120);//Адрес
+    ui->tableChannels->setColumnWidth(1,70); //офсет
+    ui->tableChannels->setColumnWidth(1,70); //множител
     ui->tableChannels->setHorizontalHeaderLabels(headers);    
     refreshChannelsTable();
     connect(ui->tableChannels,SIGNAL(cellChanged(int,int)),this,SLOT(onTabCellChanged(int,int)));
@@ -62,7 +66,7 @@ void DialogChannelSettings::onRefreshMACList()
     ui->progressBar->setVisible(true);
 
 
-    for(int node=0 ; node<_maxNodeNum ; node++)
+    for(int node=0 ; node<_maxNodeNum-1 ; node++)
     {
         for(int seg=0 ; seg<3 ;seg++)
         {
@@ -164,6 +168,7 @@ void DialogChannelSettings::onTimer()
 void DialogChannelSettings::refreshChannelsTable()
 {
     QTableWidgetItem *twiChannel, *twiNode, *twiMAC;//, *twiActive;
+    QTableWidgetItem *twiOffset, *twiRatio;
     Channel *chan;
     //Запълване на таблицата с каналите с данни от БД
     QSqlQuery qry;
@@ -199,21 +204,27 @@ void DialogChannelSettings::refreshChannelsTable()
         // 1-wire адрес
         twiMAC = new QTableWidgetItem(qry.value(3).toString(),3);
         chan->setAddress(qry.value(3).toString());
-        //Check box е маркиран ако за този канал се събират данни.
-        /*
-        //int chk = qry.value(4).toInt(&ok);
-        //chan.active = (chk!=0);
+        //Активен - Check box е маркиран ако за този канал се събират данни.
+        int chk = qry.value(4).toInt(&ok);
+        chan->setActive(chk!=0);
         //twiActive = new QTableWidgetItem();
         //twiActive->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
         //if(chk) twiActive->setCheckState(Qt::Checked);
         //else twiActive->setCheckState(Qt::Unchecked);
+
+        //Offset
+        twiOffset = new QTableWidgetItem(qry.value(5).toString(),0);
+        chan->setOffset(qry.value(5).toDouble());
+        //Ratio
+        twiRatio = new QTableWidgetItem(qry.value(6).toString(),0);
+        chan->setRatio(qry.value(6).toDouble());
         //запис на реда в таблицата
-         */
         ui->tableChannels->setItem(row,0,twiChannel);
         ui->tableChannels->setItem(row,1,twiNode);
-        ui->tableChannels->setItem(row,2,twiMAC);
+        ui->tableChannels->setItem(row,2,twiMAC);        
+        ui->tableChannels->setItem(row,3,twiOffset);
+        ui->tableChannels->setItem(row,4,twiRatio);
         //ui->tableChannels->setItem(row,3,twiActive);
-
         channelsList.append(*chan);
         row++;
     }
@@ -246,7 +257,7 @@ void DialogChannelSettings::onNewChannel()
         }
     }
 
-    sql = QString(tr("INSERT INTO tableChannels VALUES (NULL,'%1',0,'',1);").arg(name));
+    sql = QString(tr("INSERT INTO tableChannels VALUES (NULL,'%1',0,'',1,0.0,1.0);").arg(name));
     qry.prepare(sql);
     if(!qry.exec())
     {
@@ -311,9 +322,11 @@ void DialogChannelSettings::onTabCellChanged(int row, int column)
     QString currentCellText, sql;
     QSqlQuery qry;
     QRegExp rxName(tr("^[a-zA-Zа-яА-Я0-9 ]{1,30}$"));
-    QRegExp rxMAC(tr("^[A-F0-9]{8}$"));
+    QRegExp rxMAC(tr("^[A-F0-9]{16}$"));
+    QRegExp rxReal(tr("(^-?[0-9][0-9]*[.]?[0-9][0-9]*$)")); // "-?" Опция започва с -, "[0-9]" една цифра 0-9, "[0-9]*" може една или повече цифри, "[.]?  - опция точка
     QRegExpValidator vName(rxName,this);
     QRegExpValidator vMAC(rxMAC,this);
+    QRegExpValidator vReal(rxReal,this);
     bool ok;
     int i,pos=0;
 
@@ -347,7 +360,7 @@ void DialogChannelSettings::onTabCellChanged(int row, int column)
     case 1://Променен е номер на контролер (RS-485 адрес)
         currentCellText = QString::number(channelsList[row].node());
         i = s.toInt(&ok);
-        if( (!ok) || (i<0) || (i>_maxNodeNum) )
+        if( (!ok) || (i<0) || (i>_maxNodeNum-1) )
         {
             QMessageBox::critical(this,tr("ГРЕШКА!"),tr("Невалиден номер на контролер!"));
             ui->tableChannels->item(row,column)->setText(currentCellText); //Възстановява се старото съдържание
@@ -358,9 +371,9 @@ void DialogChannelSettings::onTabCellChanged(int row, int column)
     case 2://Променен е МАС адрес
         currentCellText = channelsList[row].address();
         ok = vMAC.validate(s,pos);
-        if((s.length()!=8) || (!ok))
+        if((s.length()!= MAC_LENGTH) || (!ok))
         {
-            QMessageBox::critical(this,tr("ГРЕШКА!"),tr("Невалиден адрес!\nДопустими са символи A-F(главни),0-9.\nДължина точно 8 символа."));
+            QMessageBox::critical(this,tr("ГРЕШКА!"),tr("Невалиден адрес!\nДопустими са символи A-F(главни),0-9.\nДължина точно 16 символа."));
             ui->tableChannels->item(row,column)->setText(currentCellText); //Възстановява се старото съдържание
             connect(ui->tableChannels,SIGNAL(cellChanged(int,int)),this,SLOT(onTabCellChanged(int,int)));
             return;
@@ -373,13 +386,44 @@ void DialogChannelSettings::onTabCellChanged(int row, int column)
             return;
         }
         break;
+    case 3://Променен е офсет
+        currentCellText =QString::number(channelsList[row].offset());
+        ok = vReal.validate(s,pos);
+        if((s.length()==0) || (!ok))
+        {
+            QMessageBox::critical(this,tr("ГРЕШКА"),tr("Невалидна стойност!"));
+            ui->tableChannels->item(row,column)->setText(currentCellText);
+            connect(ui->tableChannels,SIGNAL(cellChanged(int,int)),this,SLOT(onTabCellChanged(int,int)));
+            return;
+        }
+        break;
+    case 4://Променен е множител
+        currentCellText =QString::number(channelsList[row].ratio());
+        ok = vReal.validate(s,pos);
+        if((s.length()==0) || (!ok))
+        {
+            QMessageBox::critical(this,tr("ГРЕШКА"),tr("Невалидна стойност!"));
+            ui->tableChannels->item(row,column)->setText(currentCellText);
+            connect(ui->tableChannels,SIGNAL(cellChanged(int,int)),this,SLOT(onTabCellChanged(int,int)));
+            return;
+        }
+        if(ui->tableChannels->item(row,4)->text().toDouble() == 0.0)
+        {
+            QMessageBox::critical(this,tr("ГРЕШКА"),tr("Множителя не може да бъде 0!"));
+            ui->tableChannels->item(row,column)->setText(currentCellText);
+            connect(ui->tableChannels,SIGNAL(cellChanged(int,int)),this,SLOT(onTabCellChanged(int,int)));
+            return;
+        }
+        break;
     }
     //QMessageBox::information(this,"",QString("row=%1 , col=%2 data=%3 curCell=%4").arg(row).arg(column).arg(s).arg(currentCellText));
 
-    sql = QString("UPDATE tableChannels SET Channel='%1',Node=%2, MAC='%3' WHERE ID=%4;")
+    sql = QString("UPDATE tableChannels SET Channel='%1',Node=%2, MAC='%3', Offset='%4', Ratio='%5' WHERE ID=%6;")
                 .arg(ui->tableChannels->item(row,0)->text())
                 .arg(ui->tableChannels->item(row,1)->text())
                 .arg(ui->tableChannels->item(row,2)->text())
+                .arg(ui->tableChannels->item(row,3)->text())
+                .arg(ui->tableChannels->item(row,4)->text())
                 .arg(channelsList[row].id());
     qry.prepare(sql);
     if(!qry.exec())
@@ -400,6 +444,8 @@ void DialogChannelSettings::onTabCellChanged(int row, int column)
     channelsList[row].setName( ui->tableChannels->item(row,0)->text());
     channelsList[row].setNode( ui->tableChannels->item(row,1)->text().toInt(&ok));
     channelsList[row].setAddress( ui->tableChannels->item(row,2)->text());
+    channelsList[row].setOffset(ui->tableChannels->item(row,3)->text().toDouble());
+    channelsList[row].setRatio( ui->tableChannels->item(row,4)->text().toDouble());
     connect(ui->tableChannels,SIGNAL(cellChanged(int,int)),this,SLOT(onTabCellChanged(int,int)));
 }
 

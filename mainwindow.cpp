@@ -366,10 +366,16 @@ void MainWindow::channelSettingsUpdate()
         chan.setNode( node);
         // 1-wire адрес
         chan.setAddress(qry.value(3).toString());
+        //Аctive
+        //chan.setActive(qry.value(4)==1);
+        //Offset
+        chan.setOffset(qry.value(5).toDouble());
+        //Ratio
+        chan.setRatio(qry.value(6).toDouble());
 
         //Записваат се данни само за канали с коректен адрес и номер на контролер
-        if((chan.node()<0) || (chan.node()>15)) continue;
-        if(chan.address().length() !=8 ) continue;
+        if((chan.node()<0) || (chan.node()>MAX_NODE_ADDRESS)) continue;
+        if(chan.address().length() != MAC_LENGTH ) continue;
 
         channelsList.append(chan);
     }
@@ -385,7 +391,7 @@ void MainWindow::channelSettingsUpdate()
     while(qry.next())
     {
         int node = qry.value(0).toInt(&ok);
-        if((node>=0) && (node<=15)) activeNodeList.append(node);
+        if((node>=0) && (node<=MAX_NODE_ADDRESS)) activeNodeList.append(node);
     }
 
     currentNodeIndex=0;

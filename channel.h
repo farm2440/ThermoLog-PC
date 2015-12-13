@@ -14,6 +14,8 @@ public:
     void setUpdateFlag(bool flag);
     void setNode(int n);
     void setActive(bool a);
+    void setOffset(double ofs);
+    void setRatio(double rto);
 
     int id();
     QString name();
@@ -22,6 +24,8 @@ public:
     bool active();
     int temperature();
     bool updateFlag();
+    double offset();
+    double ratio();
 
 private:
     int _id;
@@ -31,6 +35,8 @@ private:
     bool _active;
     int _temperature;
     bool _updateFlag;
+    double _offset;
+    double _ratio;
 };
 
 #endif // CHANNEL_H
