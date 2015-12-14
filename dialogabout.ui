@@ -93,7 +93,14 @@
         </font>
        </property>
        <property name="text">
-        <string>и съхранение на данни за температура.</string>
+        <string>и съхранение на данни за </string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>температура и влажност.</string>
        </property>
       </widget>
      </item>

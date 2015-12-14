@@ -13,3 +13,6 @@ v2.0.1
 - В БД tableChannels са добавени колони REAL - Offset и Ratio
 dialogchannelsettings  е преработен да приема и стойности от/за новите
 колони
+
+2.0.2 -
+- В таблицата tableLog името на колоната Temp е сменено на Value и типа е променен от INT на REAL

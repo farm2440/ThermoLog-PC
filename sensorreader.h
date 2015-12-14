@@ -11,6 +11,8 @@
 #include <QTime>
 #include <QHash>
 
+#include "definitions.h"
+
 class SensorReader : public QObject
 {
     Q_OBJECT
@@ -25,7 +27,7 @@ public:
     void setNodeList(QList<int> &list);
 
     bool stopReading;
-    QHash<QString,int> temperatures;
+    QHash<QString,int> values;
 private:
     QSerialPort sp;
     QList<int> nodeList; //списък с адресите на нодовете които да бъдат прочетени

@@ -66,7 +66,7 @@ void DialogChannelSettings::onRefreshMACList()
     ui->progressBar->setVisible(true);
 
 
-    for(int node=0 ; node<_maxNodeNum-1 ; node++)
+    for(int node=0 ; node<_maxNodeNum ; node++)
     {
         for(int seg=0 ; seg<3 ;seg++)
         {

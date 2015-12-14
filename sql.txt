@@ -35,7 +35,7 @@ CREATE TABLE tableLog
 (
     Timestamp   DATETIME,
     ChannelID   INT,
-    Temp        INT
+    Value       INT
 );
 
 CREATE TABLE tableSettings

@@ -10,7 +10,7 @@ public:
     void setName(QString nm);
     void setID(int i);
     void setAddress(QString mac);
-    void setTemperature(int temp);
+    void setValue(int val);
     void setUpdateFlag(bool flag);
     void setNode(int n);
     void setActive(bool a);
@@ -22,7 +22,7 @@ public:
     int node();
     QString address();
     bool active();
-    int temperature();
+    int value();
     bool updateFlag();
     double offset();
     double ratio();
@@ -33,7 +33,7 @@ private:
     int _node;       //Номер на контролера в RS-485
     QString _address;//MAC адрес на сензора
     bool _active;
-    int _temperature;
+    int _value;
     bool _updateFlag;
     double _offset;
     double _ratio;

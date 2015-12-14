@@ -63,8 +63,7 @@ MainWindow::MainWindow(QWidget *parent) :    QMainWindow(parent),    ui(new Ui::
     curveA->setPen(QPen(Qt::red));
     curveA->setLegendAttribute(QwtPlotCurve::LegendShowLine);
     curveA->setYAxis(0);
-    curveA->attach(plot);
-
+    curveA->attach(plot);    
     //Аналогов термометър
     gauge = new QtSvgDialGauge(this);
     gauge->setSkin("Thermometer");
@@ -199,6 +198,7 @@ MainWindow::MainWindow(QWidget *parent) :    QMainWindow(parent),    ui(new Ui::
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),this, SLOT(onTrayIconActivated(QSystemTrayIcon::ActivationReason)));
 
     state=STATE_IDLE;
+    qDebug() << "state=STATE_IDLE";
     reader.setNodeList(activeNodeList);
     reader.stopReading=false;
     if(settings.commType) reader.setSerialPort(QSerialPort::Baud1200, settings.serialPortName); //RS-485
@@ -216,8 +216,6 @@ MainWindow::MainWindow(QWidget *parent) :    QMainWindow(parent),    ui(new Ui::
     timer.setInterval(5000);
     timer.setSingleShot(true);
     timer.start();
-
-
 }
 
 MainWindow::~MainWindow()
@@ -299,8 +297,7 @@ void MainWindow::refreshData()
 
     int row=0,chId;
     QString pTimestamp = "", timestamp;
-    int nTmp;
-    double dTemp;
+    double dTemp;    
 
     while(qry.next())
     {
@@ -315,16 +312,20 @@ void MainWindow::refreshData()
         }
         //извличаме температурата и я слагаме в колоната за съответния канал
         chId = qry.value(1).toInt(&ok);
-        nTmp = qry.value(2).toInt(&ok);
-        dTemp = (double)nTmp/100;
-        itm = new QTableWidgetItem(QString::number(dTemp)); //температура
-        itm->setTextAlignment(Qt::AlignCenter);
-        //по ID на канала се разбира в коя колона да се сложи температурата
+        dTemp = qry.value(2).toDouble()/100;
+        //по ID на канала се разбира в коя колона да се сложи температурата/влажността
+        //Във tableLog данните се пазят така както са дадени от сензорите. offset/ratio влияят само при показване
         for(int i=0; i!=channelsList.count() ; i++)
         {
             if(channelsList[i].id()==chId)
             {
-                ui->tableWidgetData->setItem(row,i+1,itm);
+                //ДОбавяне на стойността в таблицата коригирана с коефициент и офсет
+                double offset = channelsList[i].offset();
+                double ratio = channelsList[i].ratio();
+                dTemp = dTemp*ratio + offset;
+                itm = new QTableWidgetItem(QString::number(dTemp,'f',1)); //температура
+                itm->setTextAlignment(Qt::AlignCenter);                ui->tableWidgetData->setItem(row,i+1,itm);
+                //Добавяне към данните за графика
                 if( i == monitorChannelIndex )
                 {
                     xData.append((double)row);
@@ -503,27 +504,30 @@ void MainWindow::onTimerTick()
         else reader.setSerialPort(QSerialPort::Baud115200, settings.serialPortName); //RS-232
 
         txrxThread.start();
+        qDebug() << "state=STATE_WAITING_DATA";
         state = STATE_WAITING_DATA;
         break;
     case STATE_WAITING_DATA:
         break;
     case STATE_DATA_READY:
-        //Има върнати данни за температура в reader.temperatures. channelList се актуализира.
+        //Има върнати данни за температура/влажност в reader.temperatures. channelList се актуализира.
         for(int i=0 ; i!=channelsList.count() ; i++)
         {
             QString addr = QString::number(channelsList[i].node()) + " " + channelsList[i].address();
-            if(reader.temperatures.contains(addr))
+            if(reader.values.contains(addr))
             {
-                channelsList[i].setTemperature(reader.temperatures[addr]);
+                channelsList[i].setValue(reader.values[addr]);
                 channelsList[i].setUpdateFlag(true); //При прочитане на температура този флаг става true
             }
         }
 
-        //за текущо избрания канал от таблицата се показва температурата
+        //за текущо избрания канал от таблицата се показва температурата/влажност
         if(monitorChannelIndex!=-1)
         {
-            double dTemp = (double) channelsList[monitorChannelIndex].temperature() / 100;
-            ui->lblTemp->setText(QString::number(dTemp));
+            double dTemp = (double)channelsList[monitorChannelIndex].value() / 100;
+            dTemp *= channelsList[monitorChannelIndex].ratio();
+            dTemp += channelsList[monitorChannelIndex].offset();
+            ui->lblTemp->setText(QString::number(dTemp,'f',1));
             gauge->setValue((int)dTemp);
         }
 
@@ -582,16 +586,17 @@ void MainWindow::onTimerTick()
                 foreach(Channel chn, channelsList)
                 {
                     if(!chn.updateFlag()) continue;
-                    str = qryStr + QString::number(chn.id()) + "," + QString::number(chn.temperature()) + ");";
+                    str = qryStr + QString::number(chn.id()) + "," + QString::number(chn.value()) + ");";
                     qry.prepare(str);
                     qry.exec();
-                }                
+                }
                 refreshData();//Опреснява се таблицата с данните:
                 pbrReadingSensors->setVisible(false);//и се скрива прогресбара
             } else retry--;
         }
 
         state = STATE_IDLE;
+        qDebug() << "state=STATE_IDLE";
         break;
     }
 
@@ -605,7 +610,22 @@ void MainWindow::onTableDataSelect(int row, int col, int prow, int pcol)
     ui->groupBoxCurrentChannel->setTitle(channelsList[col-1].name());
 
     monitorChannelIndex = col-1;
-    double dTemp = (double) channelsList[col-1].temperature() / 100;
+    double dTemp = (double) channelsList[col-1].value() / 100;
+    dTemp *= channelsList[col-1].ratio();
+    dTemp += channelsList[col-1].offset();
+    QString mac= channelsList[col-1].address();
+    if(mac.left(2)=="26")
+    {//това е сензор за влажност
+        plot->setAxisTitle(0,tr("Влажност %"));
+        curveA->setPen(QPen(Qt::cyan));
+        plot->setAxisScale(0,0,100,10);
+    }
+    else
+    {
+        plot->setAxisTitle(0,tr("Температура"));
+        curveA->setPen(QPen(Qt::red));
+        plot->setAxisScale(0,-40,40,10);
+    }
     ui->lblTemp->setText(QString::number(dTemp));
     gauge->setValue((int)dTemp);
 
@@ -684,9 +704,10 @@ void MainWindow::onActionReadNow()
 
 void MainWindow::onReadSensorsDone()
 {
-    int n = reader.temperatures.count();
+    int n = reader.values.count();
     reader.closeSerialPort();
     qDebug() << n << "sensor red.";
+    qDebug() << "state=STATE_DATA_READY";
     state = STATE_DATA_READY;
 }
 

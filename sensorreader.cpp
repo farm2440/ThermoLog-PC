@@ -24,13 +24,14 @@ void SensorReader::readSensors()
 
     rxBuff.clear();
     mutex.lock();
-        temperatures.clear();
+        values.clear();
     mutex.unlock();
 
-    qDebug() << "SensorReader : readSensors()";
+    qDebug() << "\nSensorReader : readSensors()";
     if(nodeList.count()==0) goto exitThread;
     if(!sp.isOpen()) goto exitThread;
 
+    time.start();
     foreach(int n, nodeList)
     {//Обхождат се контролерите като се пращат запитвания само към адреси записани в
         for(int l = 0 ; l != 3 ; l++)
@@ -38,33 +39,47 @@ void SensorReader::readSensors()
             progress++;
             emit Progress(progress);
             mutex.lock();
-                if(stopReading)  goto exitThread;
+                if(stopReading)
+                {
+                    qDebug() << "stopReading=true --> goto exitThread (1)";
+                    goto exitThread;
+                }
             mutex.unlock();
             dataProcessed=false;
+            thr->msleep(500);
             req = QString("tst %1 %2\r\n").arg(n).arg(l);
-            qDebug() << QString("TX: ").toLatin1().data() << req.toLatin1().data();
+            qDebug() << QString("\nTX: ").toLatin1().data() << QString("tst %1 %2").arg(n).arg(l);
             sp.clear(QSerialPort::Output);
             sp.write(req.toLatin1().data());
-            sp.waitForBytesWritten(100);
+            sp.flush();
+            //sp.waitForBytesWritten(200);
             sp.clear(QSerialPort::Input);
-            time.start();
+            time.restart();
+            //qDebug() << "Restart time (1)";
             while(!dataProcessed)
             {
                 mutex.lock();
-                    if(stopReading) goto exitThread;
+                    if(stopReading)
+                    {
+                        qDebug() << "stopReading=true --> goto exitThread (2)";
+                        goto exitThread;
+                    }
                 mutex.unlock();
 
-                if(time.elapsed() > 1500)
+                if(time.elapsed() > 5000)
                 {
-                    qDebug() << QString("ГРЕШКА: Няма връзка с контролер ") << n;                    
+                    qDebug() << QString("ERROR: No connection to node ") << n;
                     l=2;
                     break; //Ако няма данни по серииния порт, настъпва таймаут.
                 }
 
-                if(sp.bytesAvailable()) rxData = sp.readAll();
+                if(sp.bytesAvailable())
+                {
+                     rxData = sp.readAll();
+                }
                 else
                 {
-                    thr->msleep(20);
+                    thr->msleep(25);
                     continue;
                 }
 
@@ -102,7 +117,8 @@ void SensorReader::readSensors()
                 }
 
                 // има приети данни - таймера се рестартира,
-                time.start();
+                time.restart();
+                //qDebug() << "Restart time (2)";
             }//while
         }//for(int l = 0 ; l != 3 ; l++)
     }//foreach(int n, activeNodeList)
@@ -116,7 +132,7 @@ void SensorReader::processSensorData(QString data)
     //Извлечените данни се вкарват в хеша temperatures
     bool ok;
     QString mac,token;
-    int node,temp;
+    int node,val;
     QMutex mutex;
 
     QStringList tokenList = data.split(' ');
@@ -127,7 +143,7 @@ void SensorReader::processSensorData(QString data)
     //Имаме данни от датчици
     //отговор от контролера с данни за температура трябва да е по-дълъг от 7
     //отговора е от типа:
-    //nod 3 seg 1 dev 4 t[D1B08502]=2600  t[1BA28502]=2600  t[1B5B8700]=2600  t[C7C78502]=2600
+    //nod 3 seg 1 dev 2 t[28FF382D3C040041]=2287  t[26FFCCCA010000BD]= 164
     if(tokenList.count()<7) return; //няма данни за температура
     token = tokenList[1];
     node = token.toInt(&ok);
@@ -136,11 +152,11 @@ void SensorReader::processSensorData(QString data)
     {
         token = tokenList[i];
         if(!token.startsWith("t[")) continue;
-        mac = QString::number(node) + " " + token.mid(2,8);
-        temp = token.mid(12).toInt(&ok);
+        mac = QString::number(node) + " " + token.mid(2,MAC_LENGTH);
+        val = token.mid(MAC_LENGTH+4).toInt(&ok);
         if(!ok) continue;//грешка при извличане на температурата
         mutex.lock();
-            temperatures.insert(mac,temp);
+            values.insert(mac,val);
         mutex.unlock();
     }
 }
@@ -155,6 +171,8 @@ void SensorReader::setSerialPort(QSerialPort::BaudRate baudrate, QString portNam
     sp.setParity(QSerialPort::NoParity);
     sp.setStopBits(QSerialPort::OneStop);
     sp.setFlowControl(QSerialPort::NoFlowControl);
+
+    sp.setReadBufferSize(0);
 }
 
 bool SensorReader::portState() { return sp.isOpen(); }
