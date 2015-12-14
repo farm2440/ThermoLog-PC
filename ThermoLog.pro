@@ -44,11 +44,18 @@ RC_FILE = thermologIcon.rc
 #---------------------------------------------------------------------------------
 # За QWT
 #---------------------------------------------------------------------------------
+#Ако библиотеката трябва да се компилира от код виж qwt-6.1.0/qwt-6.1.0/doc/html/qwtinstall.html
+# В qwtconfig.pri е пътя където да се прати компилираната библиотека. Променил съм го:
+# win32 {
+#    QWT_INSTALL_PREFIX    = C:/work/Qt/Qwt-Install-$$QWT_VERSION
+
+include ( C:\\work\\Qt\\Qwt-Install-6.1.2\\features\\qwt.prf )
+
 # Добавени за да се ползваа QWT
 #Linux
 #INCLUDEPATH += /home/svilen/work/QtPC/qwt-6.0.1/src
 #Windows
-INCLUDEPATH += C:\\work\\Qt\\Qwt-6.1.2\\src
+INCLUDEPATH += C:\\work\\Qt\\Qwt-Install-6.1.2\\include
 
 
 # Библиотеката libqwt.so.6.0.1 трябва да се копира при изпълнимия файл и да се направят връзки с кратките имена към нея
@@ -58,9 +65,9 @@ INCLUDEPATH += C:\\work\\Qt\\Qwt-6.1.2\\src
 #LIBS += /home/svilen/work/QtPC/qwt-6.0.1/lib/libqwt.so
 
 #Debug
-LIBS += C:\\work\\Qt\\Qwt-6.1.2\\lib\\qwtd.dll
+#LIBS += C:\\work\\Qt\\Qwt-Install-6.1.2\\lib\\qwtd.dll
 #Release
-#LIBS += C:\\work\\Qt\\Qwt-6.1.2\\lib\\qwt.dll
+LIBS += C:\\work\\Qt\\Qwt-Install-6.1.2\\lib\\qwt.dll
 
 #Маркера в диаграмата има 4 знака след запетаята. За да се промени броя им трябва във файла
 # qwt_plot_picker.cpp да се промени функцията QwtText QwtPlotPicker::trackerTextF( const QPointF &pos ) const

@@ -198,7 +198,7 @@ MainWindow::MainWindow(QWidget *parent) :    QMainWindow(parent),    ui(new Ui::
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),this, SLOT(onTrayIconActivated(QSystemTrayIcon::ActivationReason)));
 
     state=STATE_IDLE;
-    qDebug() << "state=STATE_IDLE";
+//    qDebug() << "state=STATE_IDLE";
     reader.setNodeList(activeNodeList);
     reader.stopReading=false;
     if(settings.commType) reader.setSerialPort(QSerialPort::Baud1200, settings.serialPortName); //RS-485
@@ -504,7 +504,7 @@ void MainWindow::onTimerTick()
         else reader.setSerialPort(QSerialPort::Baud115200, settings.serialPortName); //RS-232
 
         txrxThread.start();
-        qDebug() << "state=STATE_WAITING_DATA";
+//        qDebug() << "state=STATE_WAITING_DATA";
         state = STATE_WAITING_DATA;
         break;
     case STATE_WAITING_DATA:
@@ -596,7 +596,7 @@ void MainWindow::onTimerTick()
         }
 
         state = STATE_IDLE;
-        qDebug() << "state=STATE_IDLE";
+//        qDebug() << "state=STATE_IDLE";
         break;
     }
 
@@ -707,7 +707,7 @@ void MainWindow::onReadSensorsDone()
     int n = reader.values.count();
     reader.closeSerialPort();
     qDebug() << n << "sensor red.";
-    qDebug() << "state=STATE_DATA_READY";
+//    qDebug() << "state=STATE_DATA_READY";
     state = STATE_DATA_READY;
 }
 

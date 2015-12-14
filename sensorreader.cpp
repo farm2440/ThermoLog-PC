@@ -66,7 +66,7 @@ void SensorReader::readSensors()
                     }
                 mutex.unlock();
 
-                if(time.elapsed() > 5000)
+                if(time.elapsed() > 1200)
                 {
                     qDebug() << QString("ERROR: No connection to node ") << n;
                     l=2;
