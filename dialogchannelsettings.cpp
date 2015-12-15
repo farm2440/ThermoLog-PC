@@ -121,7 +121,7 @@ void DialogChannelSettings::onRefreshMACList()
                         foreach(QString s, lst)
                         {
                             if(s.startsWith("t[") && s.contains("]="))
-                                ui->listWidgetMAC->insertItem(ui->listWidgetMAC->count(), QString::number(node) + "-" + s.mid(2,8));
+                                ui->listWidgetMAC->insertItem(ui->listWidgetMAC->count(), QString::number(node) + "-" + s.mid(2,MAC_LENGTH));
                         }
                         rxBuff.clear();
                         continue;

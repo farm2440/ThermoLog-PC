@@ -86,6 +86,7 @@ LIBS += C:\\work\\Qt\\Qwt-Install-6.1.2\\lib\\qwt.dll
 #---------------------------------------------------------------------------------
 #   Za Qt Embedded Widgets
 #---------------------------------------------------------------------------------
+# За индикатора за влажност ползвам фон взет от тук http://colby.id.au/re-scaling-qtsvgdialgauges-tachometer-skin/
 include(c:\\work\\Qt\\embedded-widgets-1.1.0\\src\\common\\common.pri)
   #include(e:\\work\\QWT\\embedded-widgets-1.1.0\\src\\svgslideswitch\\svgslideswitch.pri)
 
@@ -101,7 +102,7 @@ include(c:\\work\\Qt\\embedded-widgets-1.1.0\\src\\svgdialgauge\\svgdialgauge.pr
 
 RESOURCES += \
     c:\\work\\Qt\\embedded-widgets-1.1.0\\skins\\thermometer_svgdialgauge.qrc \
-  #    e:\\work\\QWT\\embedded-widgets-1.1.0\\skins\\tachometer_svgdialgauge.qrc \
+    C:\\work\\Qt\\embedded-widgets-1.1.0\\skins\\tachometer_svgdialgauge.qrc \
   #     e:\\work\\QWT\\embedded-widgets-1.1.0\\skins\\amperemeter_svgdialgauge.qrc \
   #   e:\\work\\QWT\\embedded-widgets-1.1.0\\skins\\beryl_5waybutton.qrc \
   #   e:\\work\\QWT\\embedded-widgets-1.1.0\\skins\\beryl_multislider.qrc \

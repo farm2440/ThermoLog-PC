@@ -42,6 +42,10 @@ private:
     QPrintPreviewDialog *preview;
     QStringList reportChannelsList; //В този списък се зареждат имената на станциите които да бъдат включени в протокола
     QHash<int, int> hashIdColumn; //Тук се пазят двойките id/номер на колона в таблицата
+    QHash<int, double> hashIdOffset; //За всеки канал от БТ tableChannels се извлича множителя и офсета и се ползват при писането в таблицата
+    QHash<int, double> hashIdRatio;
+    QHash<int, int> hashIdFamCode;//10,28 - температура, 26 - влажност, 0-неизвестен
+    QHash<QString, int> hashNameID;
     QString famNam; //Име на изготвилия протокола
 
 private slots:

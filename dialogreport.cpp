@@ -62,7 +62,7 @@ void DialogReport::onPrintPreview()
     QSqlQuery qrySites;
     QString strQrySites;
     DialogSelectChannels dlg;
-    QHash<QString, int> hashNameID;
+
 
     //Първо се извежда диалог за избор на каналите които да бъдат включени в протокола
     strQrySites = "SELECT * from tableChannels;";
@@ -75,12 +75,26 @@ void DialogReport::onPrintPreview()
 
     int id;
     bool ok;
+    double offset, ratio, fam;
+    QString MAC;
     reportChannelsList.clear();
     while(qrySites.next())
     {
         id = qrySites.value(0).toInt(&ok);
         reportChannelsList.append(qrySites.value(1).toString());
         hashNameID.insert(qrySites.value(1).toString(), id);
+
+        offset = qrySites.value(5).toDouble();
+        ratio = qrySites.value(6).toDouble();
+        hashIdOffset.insert(id,offset);
+        hashIdRatio.insert(id, ratio);
+
+        MAC = qrySites.value(3).toString();
+        fam=0;
+        if(MAC.left(2)=="10") fam=10;
+        if(MAC.left(2)=="28") fam=28;
+        if(MAC.left(2)=="26") fam=26;
+        hashIdFamCode.insert(id,fam);
     }
     //Избор на сайтовете за протокола
     dlg.setList(&reportChannelsList);
@@ -158,7 +172,7 @@ void DialogReport::print(QPrinter *prn)
     QTextTableFormat tabFormat;
     QTextCursor tabCursor;
     int columns = 2 + reportChannelsList.count(); //Броят колони е броя канали за справка + 1 за дата/час + 1 за номер на отчет
-    int rows = 2;
+    int rows = 3;
     //Вмъква се таблицата за данните
     tabFormat.setCellPadding(2); //отстояние от съдържанието до стените на клетката
     tabFormat.setCellSpacing(0); //отстояние между клетките
@@ -184,7 +198,17 @@ void DialogReport::print(QPrinter *prn)
     {
         tabCursor = pTable->cellAt(1,i+2).firstCursorPosition();
         tabCursor.insertText(reportChannelsList[i]);
+        //Третия ред е за мерни единици - ако MAC почва 10,28 -C, 26 -%
+        int id = hashNameID[reportChannelsList[i]];
+        tabCursor = pTable->cellAt(2,i+2).firstCursorPosition();
+        QString unit;
+        if((hashIdFamCode[id] == 10)||(hashIdFamCode[id] == 28)) unit="[ºC]";
+        if(hashIdFamCode[id] == 26) unit="[%]";
+        tabCursor.insertText(unit);
     }
+
+
+
     //Извличане на данните от БД и нанасяне в таблицата
     //Извличане на данните от БД и запис в таблицата
     strQryData = QString("SELECT * FROM tableLog WHERE Timestamp>='%1' AND Timestamp<='%2' ORDER BY Timestamp DESC;")
@@ -199,7 +223,7 @@ void DialogReport::print(QPrinter *prn)
 
     QString timestamp,pTimestamp="";
     int nTemp,id;
-    double dTemp;
+    double dTemp, offset, ratio;
     bool ok;
     int n=1;
     while(qryData.next())
@@ -210,19 +234,23 @@ void DialogReport::print(QPrinter *prn)
             pTimestamp=timestamp;
             pTable->insertRows(rows,1);
             tabCursor = pTable->cellAt(rows,0).firstCursorPosition();
-            tabCursor.insertText(QString::number(n++));
+            tabCursor.insertText(QString::number(n++) + "  ");
             tabCursor.movePosition(QTextCursor::NextCell);
-            tabCursor.insertText(timestamp);
+            tabCursor.insertText(timestamp + "  ");
             rows++;
         }
         //извличаме температурата и я слагаме в колоната за съответния канал
         id = qryData.value(1).toInt(&ok);
         if(!hashIdColumn.contains(id)) continue;
 
+        offset = hashIdOffset[id];
+        ratio = hashIdRatio[id];
         nTemp = qryData.value(2).toInt(&ok);
         dTemp = (double)nTemp/100;
+        dTemp *= ratio;
+        dTemp += offset;
         tabCursor = pTable->cellAt(rows-1, hashIdColumn[id]+2).firstCursorPosition();
-        tabCursor.insertText(QString::number(dTemp));
+        tabCursor.insertText(QString::number(dTemp,'f',1));
     }
 
     //Край на извличането на данните и на поставянето им в таблици

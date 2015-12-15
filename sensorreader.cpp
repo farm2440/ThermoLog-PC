@@ -26,6 +26,7 @@ void SensorReader::readSensors()
     QSerialPort *sp;
 
     sp = new QSerialPort(this);
+    qDebug() << " ***new port ***";
     if(sp->isOpen()) sp->close();
     sp->setPortName(_portName);
     sp->open(QIODevice::ReadWrite);
@@ -35,7 +36,6 @@ void SensorReader::readSensors()
     sp->setStopBits(QSerialPort::OneStop);
     sp->setFlowControl(QSerialPort::NoFlowControl);
 
-    thr->msleep(500);
     rxBuff.clear();
     mutex.lock();
         values.clear();
@@ -146,9 +146,10 @@ void SensorReader::readSensors()
 exitThread:
     qDebug() << "---------EXIT readSensor() thread-----------------------\n";
     sp->close();
-    thr->msleep(250);
+    //thr->msleep(250);
     delete sp;
-    thr->msleep(250);
+    qDebug() << "### delete port ###";
+    //thr->msleep(250);
     thr->exit();
 }
 

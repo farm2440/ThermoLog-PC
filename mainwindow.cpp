@@ -618,14 +618,32 @@ void MainWindow::onTableDataSelect(int row, int col, int prow, int pcol)
         plot->setAxisTitle(0,tr("Влажност %"));
         curveA->setPen(QPen(Qt::cyan));
         plot->setAxisScale(0,0,100,10);
+        ui->lblUnits1->setText(" ");
+        ui->lblUnits2->setText("%");
+
+        gauge->setSkin("Tachometer");
+        gauge->setNeedleOrigin(0.486, 0.466);
+        gauge->setMinimum(0);
+        gauge->setMaximum(100);
+        gauge->setStartAngle(-125);
+        gauge->setEndAngle(125);
     }
     else
     {
         plot->setAxisTitle(0,tr("Температура"));
         curveA->setPen(QPen(Qt::red));
         plot->setAxisScale(0,-40,40,10);
+        ui->lblUnits1->setText("o");
+        ui->lblUnits2->setText("C");
+
+        gauge->setSkin("Thermometer");
+        gauge->setNeedleOrigin(0.456, 0.459);
+        gauge->setMinimum(-30);
+        gauge->setMaximum(50);
+        gauge->setStartAngle(-90);
+        gauge->setEndAngle(150);
     }
-    ui->lblTemp->setText(QString::number(dTemp));
+    ui->lblTemp->setText(QString::number(dTemp,'f',1));
     gauge->setValue((int)dTemp);
 
     //Опресняване на диаграмата - данните се извличат от таблицата
