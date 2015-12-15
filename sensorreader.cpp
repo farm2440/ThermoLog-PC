@@ -1,7 +1,7 @@
 #include "sensorreader.h"
 
 SensorReader::SensorReader(QObject *parent) :  QObject(parent)
-{
+{    
     nodeList.clear();
 }
 
@@ -17,21 +17,36 @@ void SensorReader::readSensors()
     QMutex mutex;
     QString req;
     QByteArray rxData, rxBuff;
-    QTime time;
+    QElapsedTimer time;
+    QDateTime dt;
+    qint64 elapsed;
     bool dataProcessed;
     int progress = 0;
     int  i;
+    QSerialPort *sp;
 
+    sp = new QSerialPort(this);
+    if(sp->isOpen()) sp->close();
+    sp->setPortName(_portName);
+    sp->open(QIODevice::ReadWrite);
+    sp->setBaudRate(_baudrate);
+    sp->setDataBits(QSerialPort::Data8);
+    sp->setParity(QSerialPort::NoParity);
+    sp->setStopBits(QSerialPort::OneStop);
+    sp->setFlowControl(QSerialPort::NoFlowControl);
+
+    thr->msleep(500);
     rxBuff.clear();
     mutex.lock();
         values.clear();
     mutex.unlock();
 
-    qDebug() << "\nSensorReader : readSensors()";
+    qDebug() << "\n---------START readSensor() in thread-----------------------";
     if(nodeList.count()==0) goto exitThread;
-    if(!sp.isOpen()) goto exitThread;
+    if(!sp->isOpen()) goto exitThread;
 
     time.start();
+
     foreach(int n, nodeList)
     {//Обхождат се контролерите като се пращат запитвания само към адреси записани в
         for(int l = 0 ; l != 3 ; l++)
@@ -48,34 +63,40 @@ void SensorReader::readSensors()
             dataProcessed=false;
             thr->msleep(500);
             req = QString("tst %1 %2\r\n").arg(n).arg(l);
-            qDebug() << QString("\nTX: ").toLatin1().data() << QString("tst %1 %2").arg(n).arg(l);
-            sp.clear(QSerialPort::Output);
-            sp.write(req.toLatin1().data());
-            sp.flush();
+            qDebug() << dt.currentDateTime().toString("hh:mm:ss:zzz ") << QString("TX: ").toLatin1().data() << QString("tst %1 %2").arg(n).arg(l);
+            //sp->clear(QSerialPort::Output);
+            sp->write(req.toLatin1().data());
+            sp->flush();
             //sp.waitForBytesWritten(200);
-            sp.clear(QSerialPort::Input);
-            time.restart();
-            //qDebug() << "Restart time (1)";
+            //sp->clear(QSerialPort::Input);
+
+            elapsed = time.elapsed();
+            qDebug() << "elapsed=" <<elapsed;
             while(!dataProcessed)
             {
                 mutex.lock();
                     if(stopReading)
                     {
-                        qDebug() << "stopReading=true --> goto exitThread (2)";
+                        qDebug() << dt.currentDateTime().toString("hh:mm:ss:zzz ") << "stopReading=true --> goto exitThread (2)";
                         goto exitThread;
                     }
                 mutex.unlock();
 
-                if(time.elapsed() > 1200)
+                qint64 sofar= time.elapsed();
+                if(sofar-elapsed > 10000)
                 {
-                    qDebug() << QString("ERROR: No connection to node ") << n;
+                    qDebug() << dt.currentDateTime().toString("hh:mm:ss:zzz ") << QString("ERROR: No connection to node ") << n;
+                    qDebug() << "elapsed=" <<sofar;
                     l=2;
                     break; //Ако няма данни по серииния порт, настъпва таймаут.
                 }
 
-                if(sp.bytesAvailable())
+                if(sp->canReadLine()) qDebug() <<" can read line";
+                sp->waitForReadyRead(1000);
+                if(sp->bytesAvailable())
                 {
-                     rxData = sp.readAll();
+                     //qDebug() << "bytes are available;";
+                     rxData = sp->readAll();
                 }
                 else
                 {
@@ -104,7 +125,7 @@ void SensorReader::readSensors()
                     if(i==0)
                     {//Първия приет символ е \r. махам го и обработвам буфера
                         rxData = rxData.remove(0,1);
-                        qDebug() << QString("SensorReader : rxBuf=").toLatin1().data() << QString(rxBuff).toLatin1().data();
+                        qDebug() << dt.currentDateTime().toString("hh:mm:ss:zzz ") << QString("SensorReader : rxBuf=").toLatin1().data() << QString(rxBuff).toLatin1().data();
                         processSensorData(QString(rxBuff));
                         rxBuff.clear();
                         dataProcessed=true;
@@ -117,12 +138,17 @@ void SensorReader::readSensors()
                 }
 
                 // има приети данни - таймера се рестартира,
-                time.restart();
-                //qDebug() << "Restart time (2)";
+                elapsed = time.elapsed();
+               // qDebug() << "elapsed " << elapsed;
             }//while
         }//for(int l = 0 ; l != 3 ; l++)
     }//foreach(int n, activeNodeList)
 exitThread:
+    qDebug() << "---------EXIT readSensor() thread-----------------------\n";
+    sp->close();
+    thr->msleep(250);
+    delete sp;
+    thr->msleep(250);
     thr->exit();
 }
 
@@ -163,24 +189,10 @@ void SensorReader::processSensorData(QString data)
 
 void SensorReader::setSerialPort(QSerialPort::BaudRate baudrate, QString portName)
 {
-    if(sp.isOpen()) sp.close();
-    sp.setPortName(portName);
-    sp.open(QIODevice::ReadWrite);
-    sp.setBaudRate(baudrate);
-    sp.setDataBits(QSerialPort::Data8);
-    sp.setParity(QSerialPort::NoParity);
-    sp.setStopBits(QSerialPort::OneStop);
-    sp.setFlowControl(QSerialPort::NoFlowControl);
-
-    sp.setReadBufferSize(0);
+    _baudrate=baudrate;
+    _portName=portName;
 }
 
-bool SensorReader::portState() { return sp.isOpen(); }
-
-void SensorReader::closeSerialPort()
-{
-    if(sp.isOpen()) sp.close();
-}
 
 void SensorReader::setNodeList(QList<int> &list)
 {

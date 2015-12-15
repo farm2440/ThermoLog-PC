@@ -222,7 +222,7 @@ MainWindow::~MainWindow()
 {
     qDebug() << "~MainWindow()";
     if(database.isOpen()) database.close();
-    if(reader.portState()) reader.closeSerialPort();
+//    if(reader.portState()) reader.closeSerialPort();
     if(txrxThread.isRunning()) txrxThread.exit();
     delete ui;
 }
@@ -232,7 +232,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     if(exitFromMenu)
     {
         qDebug() << "Exit from menu. Event accepted...";
-        if(reader.portState()) reader.closeSerialPort();
+//        if(reader.portState()) reader.closeSerialPort();
         event->accept();
     }
     else
@@ -254,7 +254,6 @@ void MainWindow::channelSettings()
 
     if(txrxThread.isRunning()) reader.stopReading = true;
     txrxThread.wait(1500);
-    reader.closeSerialPort();
     if(txrxThread.isRunning()) qDebug() << "Entering channel settings but reader thread is still running!";
 
     if(settings.commType) baud=QSerialPort::Baud1200;//RS-485
@@ -705,7 +704,6 @@ void MainWindow::onActionReadNow()
 void MainWindow::onReadSensorsDone()
 {
     int n = reader.values.count();
-    reader.closeSerialPort();
     qDebug() << n << "sensor red.";
 //    qDebug() << "state=STATE_DATA_READY";
     state = STATE_DATA_READY;
