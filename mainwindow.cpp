@@ -78,13 +78,24 @@ MainWindow::MainWindow(QWidget *parent) :    QMainWindow(parent),    ui(new Ui::
     ui->layoutAnalogThermometer->addWidget(gauge);
 
     ui->splitter->setStretchFactor(1,1);//това прибира сплитера максимално нагоре
+    //От текстов файл settings.txt се извлича името на файла с БД. Ако settings.txt го няма
+    // се задава име без път т.е. ще бъде търсен в текущата директория
+    QFile stgFile("settings.txt");
+    if(stgFile.exists())
+    {
+        QTextStream s(&stgFile);
+        stgFile.open(QIODevice::ReadOnly);
+        settings.dbFileName = s.readLine();
+        stgFile.close();
+    }
+    if(settings.dbFileName=="") settings.dbFileName="thermolog.db";
 
     //отваряне на базата данни
-    QFile dbFile("thermolog.db");
+    QFile dbFile(settings.dbFileName);
     if(!dbFile.exists()) QMessageBox::critical(this, tr("Грешка база данни"), tr("Файлът с БД не съществува"));
     else
     {   database = QSqlDatabase::addDatabase("QSQLITE"); //QSQLITE е за версия 3 и нагоре, QSQLITE2 e за версия 2
-        database.setDatabaseName("thermolog.db");
+        database.setDatabaseName(settings.dbFileName);
         if(!database.open()) QMessageBox::critical(this, tr("Грешка база данни"), tr("Не мога да отворя БД"));
     }
 
@@ -410,7 +421,8 @@ void MainWindow::onActionSettings()
                    settings.maxFailRetry,
                    settings.commType,
                    settings.maxNodeNum,
-                   settings.serialPortName);
+                   settings.serialPortName,
+                   settings.dbFileName);
     if(dlg.exec())
     {
         startTime = dlg.startTime;
@@ -424,6 +436,17 @@ void MainWindow::onActionSettings()
         settings.maxNodeNum = dlg.maxNodeNum;
         settings.serialPortName = dlg.serialPort;
 
+        if(settings.dbFileName!=dlg.dbFileName)
+        {//Променено е името на файла с БД
+            settings.dbFileName = dlg.dbFileName;
+            //Запис на името на файла с БД в settings.txt
+            QFile stgFile("settings.txt");
+            stgFile.open(QIODevice::WriteOnly);
+            QTextStream ss(&stgFile);
+            ss << settings.dbFileName;
+            stgFile.close();
+            QMessageBox::information(this,tr("ПРЕДУПРЕЖДЕНИЕ"),tr("Променено името на файла с БД.\nПрограмата трябва да бъде рестартирана."));
+        }
         //Новите настройки се записват в БД
         QSqlQuery qry;
         QString str = QString("UPDATE tableSettings SET startH=%1, startM=%2, nextScanHours=%3, nextScanMinutes=%4, openOnFail=%5, maxFailRetry=%6, commType=%7, maxNodeNum=%8, serialPort='%9';")

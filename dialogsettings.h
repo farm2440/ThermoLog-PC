@@ -3,6 +3,8 @@
 
 #include <QDialog>
 #include <QTime>
+#include <QFileDialog>
+#include <QMessageBox>
 
 namespace Ui {
     class DialogSettings;
@@ -22,8 +24,9 @@ public:
     int commType;
     int maxNodeNum;
     QString serialPort;
+    QString dbFileName;
 
-    void initValues(QTime t,int h, int m, bool oof, int mf, int ct, int mnn, QString sp);
+    void initValues(QTime t, int h, int m, bool oof, int mf, int ct, int mnn, QString sp, QString dbf);
 protected:
     void changeEvent(QEvent *e);
 
@@ -34,6 +37,7 @@ private slots:
     void onMinutesChanged(int m);
     void onHoursChanged(int h);
     void onOK();
+    void on_btnSelectFileDB_clicked();
 };
 
 #endif // DIALOGSETTINGS_H

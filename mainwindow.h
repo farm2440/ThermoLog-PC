@@ -68,6 +68,7 @@ struct SettingsStruct
     int maxNodeNum;
     int commType;  //0- rs232, 1- rs485
     QString serialPortName;
+    QString dbFileName;
 };
 
 namespace Ui {

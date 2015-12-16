@@ -61,10 +61,17 @@ void DialogSettings::onOK()
     else commType=0;
     maxNodeNum = ui->spbMaxNodeNumber->value();
     serialPort = ui->lineEdit_SerialPort->text();
+    dbFileName = ui->txtFileDB->text();
+    QFile dbFile(dbFileName);
+    if(!dbFile.exists())
+    {
+        QMessageBox::critical(this, tr("Грешка"), tr("Файлът с БД не съществува"));
+        return;
+    }
     this->accept();
 }
 
-void DialogSettings::initValues(QTime t, int h, int m, bool oof, int mf, int ct, int mnn, QString sp)
+void DialogSettings::initValues(QTime t, int h, int m, bool oof, int mf, int ct, int mnn, QString sp, QString dbf)
 {
     ui->spinHours->setValue(h);
     ui->spinMinutes->setValue(m);
@@ -75,4 +82,18 @@ void DialogSettings::initValues(QTime t, int h, int m, bool oof, int mf, int ct,
     else ui->rbRS232->setChecked(true);
     ui->spbMaxNodeNumber->setValue(mnn);
     ui->lineEdit_SerialPort->setText(sp);
+    ui->txtFileDB->setText(dbf);
+}
+
+void DialogSettings::on_btnSelectFileDB_clicked()
+{
+    dbFileName = QFileDialog::getOpenFileName(this,tr("Open DB file"), dbFileName, tr("database (*.db)"));
+    ui->txtFileDB->setText(dbFileName);
+
+    QFile dbFile(dbFileName);
+    if(!dbFile.exists())
+    {
+        QMessageBox::critical(this, tr("Грешка"), tr("Файлът с БД не съществува"));
+        return;
+    }
 }
